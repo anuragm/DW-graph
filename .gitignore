@@ -1,0 +1,4 @@
+#Ignores the mat files which store graph data
++squareCode/*.mat
++pudenzCode/*.mat
++physicalGraph/*.mat
