@@ -110,11 +110,11 @@ fclose(fid);
 
 %% Now compile to pdf file.
 setenv('PATH', [getenv('PATH') ':/usr/local/bin:/usr/texbin']);
-command = sprintf('pdflatex %s.tex',fileName);
-[~,~] = system(command);
-command = sprintf('latexmk -c %s.tex',fileName);
-[~,~] = system(command);
-command = sprintf('pdfcrop %s.pdf',fileName);
+command    = sprintf('pdflatex %s.tex',fileName);
+[~,~]      = system(command);
+command    = sprintf('latexmk -c %s.tex',fileName);
+[~,~]      = system(command);
+command    = sprintf('pdfcrop %s.pdf',fileName);
 [status,~] = system(command);
 
 if ( status ~= 0)

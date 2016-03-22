@@ -98,18 +98,16 @@ fprintf(fid,'\n\n\\end{pgfonlayer}\n\\end{tikzpicture}\n\\end{document}\n');
 fclose(fid);
 
 %% Now compile to pdf file.
-% setenv('PATH', [getenv('PATH') ':/usr/local/bin:/usr/local']);
-% command = sprintf('pdflatex %s.tex',fileName);
-% [~,~] = system(command);
-% command = sprintf('latexmk -c %s.tex',fileName);
-% [~,~] = system(command);
-%command = sprintf('pdfcrop %s.pdf',fileName);
-%[status,~] = system(command);
-% 
-%if ( status ~= 0)
-%    fprintf('cannot compile latex!\n')
-%end
-
-fprintf('Please compile \n');
+setenv('PATH', [getenv('PATH') ':/usr/local/bin:/usr/local']);
+command = sprintf('pdflatex %s.tex',fileName);
+[~,~] = system(command);
+command = sprintf('latexmk -c %s.tex',fileName);
+[~,~] = system(command);
+command = sprintf('pdfcrop %s.pdf',fileName);
+[status,~] = system(command);
+ 
+if ( status ~= 0)
+    fprintf('cannot compile latex!\n')
+end
 
 end

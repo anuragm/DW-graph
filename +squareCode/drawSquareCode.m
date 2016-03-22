@@ -1,7 +1,11 @@
 %This files generates the sqaure encoded graph by use of helper function
 %drawHamiltonian.
 
-totalLogicalQubits = 288;
+currentFilePath = mfilename('fullpath');
+parentDir = fileparts(currentFilePath);
+codeFile = fullfile(parentDir,'code.mat');
+load(codeFile,'logicalNgbr');
+totalLogicalQubits = length(logicalNgbr);
 
 z = ones(1,totalLogicalQubits);
 h = ones(1,totalLogicalQubits);

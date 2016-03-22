@@ -5,8 +5,7 @@ currentFilePath = mfilename('fullpath');
 parentDir = fileparts(currentFilePath);
 codeFile = fullfile(parentDir,'code.mat');
 load(codeFile,'code','logicalNgbr');
-
-totalQubits = 288;
+totalQubits = length(logicalNgbr);
 
 h = ones(1,totalQubits);
 J = zeros(totalQubits,totalQubits);
