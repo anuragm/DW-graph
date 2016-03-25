@@ -14,7 +14,7 @@ function [code,holes,logicalNgbr] = generate_code(varargin)
 % also generated. Both these quantities are saved to file code.mat. The holes,the missing
 % qubits, are also saved in holes.mat. 
   
-import physicalGraph.is_valid_coupling;
+import dwGraph.physicalGraph.is_valid_coupling;
 
 holes = [];
 %Create solver if not supplied as argument.

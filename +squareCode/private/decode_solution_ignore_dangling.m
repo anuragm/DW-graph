@@ -56,7 +56,7 @@ for ii=1:(length(listOfQubits)-1)
 end
 
 %Get the physical Hamiltonian, with penalty strength of 1 applied.
-[~, J_physical] = squareCode.logicalToPhysicalHam(h_logical,J_logical,1);
+[~, J_physical] = dwGraph.squareCode.logicalToPhysicalHam(h_logical,J_logical,1);
 if ~isequal(J_physical,J_physical')
     J_physical = J_physical + J_physical';
 end

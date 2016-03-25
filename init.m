@@ -14,7 +14,7 @@ end
 pkgs = {'squareCode','pudenzCode','physicalGraph'};
 for ii=1:length(pkgs)
     pkg = pkgs{ii};
-    hGenCode = str2func([pkg '.generate_code']);
+    hGenCode = str2func(['dwGraph.' pkg '.generate_code']);
     hGenCode();
 end
 fprintf('Generated all the code dictionaries for different graphs\n');
@@ -27,19 +27,19 @@ end
 
 newPlots = false;
 if ~(exist('_plots/pudenzCode.pdf','file')==2)
-    pudenzCode.drawPudenzCode; newPlots = true;
+    dwGraph.pudenzCode.drawPudenzCode; newPlots = true;
 else
     fprintf('Graph for Pudenz code already exists. \n');
 end
 
 if ~(exist('_plots/squareCode.pdf','file')==2)
-    squareCode.drawSquareCode; newPlots = true;
+    dwGraph.squareCode.drawSquareCode; newPlots = true;
 else
     fprintf('Graph for Square code already exists. \n');
 end
 
 if ~(exist('_plots/chimeraGraph.pdf','file')==2)
-    physicalGraph.drawChimeraGraph; newPlots = true;
+    dwGraph.physicalGraph.drawChimeraGraph; newPlots = true;
 else
     fprintf('Physical Chimera graph already exists. \n');
 end

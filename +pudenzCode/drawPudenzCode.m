@@ -16,4 +16,4 @@ for qubit=0:(totalQubits-1)
     end
 end
 
-pudenzCode.draw_hamiltonian('pudenzCode',h,J);
+dwGraph.pudenzCode.draw_hamiltonian('pudenzCode',h,J);

@@ -13,7 +13,7 @@ numOfReads = size(solutions,2);
 
 for logicalQubit = listOfQubits
 
-    physicalQubits = squareCode.get_physical_qubits(logicalQubit);
+    physicalQubits = dwGraph.squareCode.get_physical_qubits(logicalQubit);
     physicalData   = solutions(physicalQubits+1,:); %+1 for MATLAB indexing.
     majorityDecode = sum(physicalData,1);
     

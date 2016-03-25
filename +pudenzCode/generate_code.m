@@ -13,7 +13,7 @@ function [code,holes,logicalNgbr] = generate_code(varargin)
 % Additionally, a second variable which contains the neighbors of a given logical qubit is
 % also generated. Both these quantities are saved to file code.mat. 
   
-import physicalGraph.is_valid_coupling;
+import dwGraph.physicalGraph.is_valid_coupling;
 
 holes = [];
 %Create solver if not supplied as argument.

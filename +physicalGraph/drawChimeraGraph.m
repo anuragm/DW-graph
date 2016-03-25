@@ -16,4 +16,4 @@ for qubit=0:1:(numOfQubits-1)
     end
 end
 
-physicalGraph.draw_hamiltonian('chimeraGraph',h,J);
+dwGraph.physicalGraph.draw_hamiltonian('chimeraGraph',h,J);
