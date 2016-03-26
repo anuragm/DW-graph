@@ -53,7 +53,7 @@ while(true)
         end
         
         %Just check once before submission if the timeslot is closed.
-        [slotOpen,waitTime]=isTimeSlot();
+        [slotOpen,waitTime]=dwGraph.isTimeSlot();
         if(slotOpen == false)
             fprintf('Waiting for D-wave Time slot to open \n');
             pause(waitTime);
