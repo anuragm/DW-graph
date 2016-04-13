@@ -43,36 +43,52 @@ else
     solver = varargin{1};
 end
 
-propertiesDW = sapiSolverProperties(solver);
-workingQubits = propertiesDW.qubits; %column vector
+propertiesDW    = sapiSolverProperties(solver);
+workingQubits   = propertiesDW.qubits; %column vector
 workingCouplers = propertiesDW.couplers; %2xnumberOfCouplings matrix
-totalQubits = propertiesDW.num_qubits; %Total number of qubits on graph, working or otherwise
+totalQubits     = propertiesDW.num_qubits; %Total number of qubits on graph, working or otherwise
 %holes are the non-functional qubits on physical graph.
-physicalHoles = setdiff(0:1:(totalQubits-1), workingQubits');
+physicalHoles   = setdiff(0:1:(totalQubits-1), workingQubits');
 
 %From here on, we travese unit cell by unitcell and see if we can get group of three qubits on
 %one half of the cell, and the penalty qubit on the other side. The first three qubits are the
 %data qubits, the last qubit is the penalty qubit. If the last qubit is missing, we can still
 %work with three qubits, with a penalty term missing.
 
-totalLogicalQubit = totalQubits/4; 
-keySet = 0:1:(totalLogicalQubit-1);
-valueSet{length(keySet)}=[];
-cellSize = sqrt(totalLogicalQubit/2);
+totalLogicalQubit        = totalQubits/4; 
+keySet                   = 0:1:(totalLogicalQubit-1);
+valueSet{length(keySet)} = [];
+cellSize                 = sqrt(totalLogicalQubit/2);
 for ii=0:8:(totalQubits-8) %Assuming unit cells of size 8.
 
     leftLogical = 2*floor(ii/8); rightLogical = leftLogical+1;
     leftPhysical = [ii ii+1 ii+2];
     rightPhysical = [ii+4 ii+5 ii+6];
     
+        
     %Add the penalty qubits if present.
     if ~ismember(ii+7,physicalHoles)
-        leftPhysical = [leftPhysical ii+7]; %#ok
-    end
-    if ~ismember(ii+3,physicalHoles)
-        rightPhysical = [rightPhysical ii+3];  %#ok
+        %Check if there are links present between data qubits and penalty qubit.
+        properCoupling = is_valid_coupling(leftPhysical(1),ii+7,workingCouplers) && ...
+                         is_valid_coupling(leftPhysical(2),ii+7,workingCouplers) && ...
+                         is_valid_coupling(leftPhysical(3),ii+7,workingCouplers);
+        
+        if properCoupling
+            leftPhysical = [leftPhysical ii+7]; %#ok
+        end
     end
     
+    if ~ismember(ii+3,physicalHoles)
+        %Check if there are links present between data qubits and penalty qubit.
+        properCoupling = is_valid_coupling(rightPhysical(1),ii+3,workingCouplers) && ...
+                         is_valid_coupling(rightPhysical(2),ii+3,workingCouplers) && ...
+                         is_valid_coupling(rightPhysical(3),ii+3,workingCouplers);
+    
+        if properCoupling
+            rightPhysical = [rightPhysical ii+3];  %#ok
+        end
+    end
+
     if ~isempty(intersect(leftPhysical(1:3),physicalHoles)) %Is data qubit missing on left.
         leftPhysical = [];
         holes = [holes leftLogical]; %#ok
@@ -93,9 +109,9 @@ code = containers.Map(keySet,valueSet);
 %connected, and add them to neighbor dictionary.
 
 clearvars valueSet keySet;
-keySet = 0:1:(totalLogicalQubit-1);
-valueSet{length(keySet)}=[];
-validLogicalQubits = setdiff(keySet,holes);
+keySet                   = 0:1:(totalLogicalQubit-1);
+valueSet{length(keySet)} = [];
+validLogicalQubits       = setdiff(keySet,holes);
 for ii=keySet
 
     if ismember(ii,holes)

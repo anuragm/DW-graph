@@ -8,8 +8,9 @@ function [h_physical,J_physical] = logical_to_physical_ham(h_logical, J_logical)
 %  stub for functions which require a translation function for codes.
 
 %Initialize return arrays
-h_physical = zeros(512,1);
-J_physical = zeros(512,512);
+totalQubits = dwGraph.physicalGraph.get_total_qubits();
+h_physical = zeros(totalQubits,1);
+J_physical = zeros(totalQubits,totalQubits);
 
 %Load the code and neighbor matrix once.
 persistent holes; persistent ngbrs;
@@ -26,7 +27,7 @@ J_logical = triu(J_logical + J_logical'); %This ensures that both J_ij and J_ji 
                                           %so that we only have to check upper triangle for
                                           %values. 
 
-for ii=1:512
+for ii=1:totalQubits
     physicalQubit = ii-1; %\pm 1 for MATLAB indexing.
     
     %Translate h

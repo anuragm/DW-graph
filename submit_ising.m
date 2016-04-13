@@ -1,5 +1,5 @@
 function result = submit_ising(h_physical,J_physical,param)
-%SUBMITINSTANCE submits an physical Ising instance to DWave and returns the result. 
+%SUBMITINSTANCE submits an physical Ising instance to DWave and returns the result.
 %USAGE:
 %   result = submit_ising(h_physical,J_physical,param)
 %
@@ -19,7 +19,7 @@ param.answer_mode = 'raw';
 J_max = max(abs(J_physical(:))); h_max = max(abs(h_physical(:)));
 scaleFactor = max([J_max h_max 1]);
 h_physical = h_physical/scaleFactor; J_physical = J_physical/scaleFactor;
-    
+
 %Open an error file to write errors. This will help in not polluting main
 %window.
 fileHandle = fopen('errors.txt','at');
@@ -41,19 +41,31 @@ while(true)
                     disp(errorE)
                     fprintf(['Fatal error in creating a solver. Are you sure you can connect' ...
                              ' to DW2? \n']);
-                    
+
                     fprintf('Retrying ...\n');
                 end
             end
         end
-        
-        %Just check once before submission if the timeslot is closed.
-        [slotOpen,waitTime]=dwGraph.isTimeSlot();
-        if(slotOpen == false)
-            fprintf('Waiting for D-wave Time slot to open \n');
-            pause(waitTime);
+
+        %Use asynchronous submission method.
+        resultCaptured = false;
+        normalWaitTime = 100; %Wait for this many seconds normally to gather result.
+
+        while ~resultCaptured
+            problemToken = sapiAsyncSolveIsing(solver,h_physical,J_physical,param);
+            [slotOpen,timeToWait] = dwGraph.isTimeSlot();
+            if slotOpen %Wait for normal wait time.
+                isDone = sapiAwaitCompletion({problemToken},1,normalWaitTime);
+            else %Wait for slot to open, and then the normal wait time.
+                isDone = sapiAwaitCompletion({problemToken},1,normalWaitTime+timeToWait);
+            end
+
+            if isDone
+                resultCaptured = true;
+            end
         end
-        result = sapiSolveIsing(solver,h_physical,J_physical,param);
+
+        result = sapiAsyncResult(problemToken);
         break;
     catch errorObject
         fprintf('!*');
@@ -64,7 +76,7 @@ while(true)
         if strcmp(errorObject.identifier,'sapi:NetworkError')
             shouldRenewSolver = true;
         end
-    end    
+    end
 end
 
 fclose(fileHandle);

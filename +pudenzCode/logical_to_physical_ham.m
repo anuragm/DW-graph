@@ -10,8 +10,11 @@ function [h_physical,J_physical] = logical_to_physical_ham(h_logical, J_logical,
 %J matrix. 
 
 %Initialize return arrays
-h_physical = zeros(512,1);
-J_physical = zeros(512,512);
+totalQubits = dwGraph.physicalGraph.get_total_qubits();
+totalLogicalQubits = dwGraph.pudenzCode.get_total_qubits();
+    
+h_physical = zeros(totalQubits,1);
+J_physical = zeros(totalQubits,totalQubits);
 
 %Load the code and neighbor matrix once.
 persistent code; persistent ngbrs;
@@ -26,7 +29,7 @@ end
 
 J_logical = J_logical + J_logical'; %This ensures that both J_ij and J_ji are added, so that
                                     %we only have to check upper triangle for values.
-for ii=1:128
+for ii=1:totalLogicalQubits
     physicalQubits = code(ii-1)+1; %\pm 1 compensate for MATLAB 1-indexing.
     
     %% Translate h

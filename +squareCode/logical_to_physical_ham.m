@@ -10,22 +10,26 @@ function [h_physical,J_physical] = logical_to_physical_ham(h_logical, J_logical,
 %J matrix. 
 
 %Initialize return arrays
-h_physical = zeros(512,1);
-J_physical = zeros(512,512);
+totalQubits        = dwGraph.physicalGraph.get_total_qubits();
+totalLogicalQubits = dwGraph.squareCode.get_total_qubits();
+gridSize           = sqrt(totalLogicalQubits/2);    
+
+h_physical = zeros(totalQubits,1);
+J_physical = zeros(totalQubits,totalQubits);
 
 %Load the code and neighbor matrix once.
 persistent code; persistent ngbrs;
 if isempty(code)
     currentFilePath = mfilename('fullpath');
-    parentDir = fileparts(currentFilePath);
-    dataLoaded = load(fullfile(parentDir,'code.mat'));
-    code  = dataLoaded.code;
-    ngbrs = dataLoaded.logicalNgbr; 
+    parentDir       = fileparts(currentFilePath);
+    dataLoaded      = load(fullfile(parentDir,'code.mat'));
+    code            = dataLoaded.code;
+    ngbrs           = dataLoaded.logicalNgbr; 
 end
 
 J_logical = J_logical + J_logical'; %This ensures that both J_ij and J_ji are added, so that
                                     %we only have to check upper triangle for values.
-for ii=1:128
+for ii=1:totalLogicalQubits
     physicalQubits = code(ii-1)+1; %\pm 1 compensate for MATLAB 1-indexing.
     
     %% Translate h
@@ -56,13 +60,13 @@ for ii=1:128
         if abs(qubit1-qubit2)==1 %If left-right neighbors
             J_physical(physicalQubits1(3),physicalQubits2(3))=J_logical(qubit1+1,qubit2+1);
             J_physical(physicalQubits1(4),physicalQubits2(4))=J_logical(qubit1+1,qubit2+1);
-        elseif abs(qubit1-qubit2)==16 %If vertical neighbors
+        elseif abs(qubit1-qubit2)==2*gridSize %If vertical neighbors
             J_physical(physicalQubits1(1),physicalQubits2(1))=J_logical(qubit1+1,qubit2+1);
             J_physical(physicalQubits1(2),physicalQubits2(2))=J_logical(qubit1+1,qubit2+1);
-        elseif (qubit1-qubit2) ==  8 %Front-back neighbors
+        elseif (qubit1-qubit2) ==  gridSize %Front-back neighbors
             J_physical(physicalQubits1(1),physicalQubits2(4))=J_logical(qubit1+1,qubit2+1);
             J_physical(physicalQubits1(3),physicalQubits2(2))=J_logical(qubit1+1,qubit2+1);
-        elseif (qubit1-qubit2) == -8 %Back-front neighbors
+        elseif (qubit1-qubit2) == -gridSize %Back-front neighbors
             J_physical(physicalQubits1(2),physicalQubits2(3))=J_logical(qubit1+1,qubit2+1);
             J_physical(physicalQubits1(4),physicalQubits2(1))=J_logical(qubit1+1,qubit2+1);
         end
