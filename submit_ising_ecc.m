@@ -4,8 +4,8 @@ function result = submit_ising_ecc(h_logical,J_logical,param,translateFnHandle)
 %   result = submit_ising(h_physical,J_physical,param)
 %
 %INPUT:
-%   h_physical  : The physical local fields.
-%   J_physical  : The physical couplings.
+%   h_logical  : The physical local fields.
+%   J_logical  : The physical couplings.
 %       Coulings will be scaled down to [-1,1] range if necessary. No scale up would be done.
 %   param      : parameters to be send to DW2.
 %   tranlateFnHandle : A handle to function that can convert logical to physical Ham.
