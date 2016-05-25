@@ -20,65 +20,115 @@ J_max = max(abs(J_physical(:))); h_max = max(abs(h_physical(:)));
 scaleFactor = max([J_max h_max 1]);
 h_physical = h_physical/scaleFactor; J_physical = J_physical/scaleFactor;
 
+%Split the problem into multiple programming cycle, and join the results at end.
+if param.num_reads > 1000
+    progCycles = ceil(param.num_reads/1000);
+    param.num_reads = 1000;
+else
+    progCycles = 1;
+end
+resultLocal = cell(1,progCycles);
+
+%Submit the chain to D-Wave, and return the result.
+
 %Open an error file to write errors. This will help in not polluting main
 %window.
 fileHandle = fopen('errors.txt','at');
+logFile    = fopen('log.txt','at');
 
 persistent solver; persistent shouldRenewSolver ;
 
-while(true)
-    try
-        if( isempty(solver) || shouldRenewSolver)
-            %(Re)Initialise Vesuvious
-            load('solverSettings.mat','urlDwave','myToken','solverName');
-            while(true)
-                try
-                    connHandle = sapiRemoteConnection(urlDwave,myToken);
-                    solver = sapiSolver(connHandle,solverName);
-                    shouldRenewSolver = false;
-                    break;
-                catch errorE
-                    disp(errorE)
-                    fprintf(['Fatal error in creating a solver. Are you sure you can connect' ...
-                             ' to DW2? \n']);
+for iiProgCycle = 1:progCycles
+    while(true)
+        try
+            if( isempty(solver) || shouldRenewSolver)
+                %(Re)Initialise D-Wave
+                load('solverSettings.mat','urlDwave','myToken','solverName');
+                while(true)
+                    try
+                        connHandle        = sapiRemoteConnection(urlDwave,myToken);
+                        solver            = sapiSolver(connHandle,solverName);
+                        shouldRenewSolver = false;
+                        break;
+                    catch errorE
+                        disp(errorE)
+                        fprintf(['Fatal error in creating a solver. Are you sure you can connect' ...
+                                 ' to D-Wave? \n']);
 
-                    fprintf('Retrying ...\n');
+                        fprintf('Retrying ...\n');
+                    end
                 end
             end
-        end
 
-        %Use asynchronous submission method.
-        resultCaptured = false;
-        normalWaitTime = 100; %Wait for this many seconds normally to gather result.
+            resultCaptured = false;
+            normalWaitTime = 100; %Wait for this many seconds normally to gather result.
 
-        while ~resultCaptured
-            problemToken = sapiAsyncSolveIsing(solver,h_physical,J_physical,param);
-            [slotOpen,timeToWait] = dwGraph.isTimeSlot();
-            if slotOpen %Wait for normal wait time.
-                isDone = sapiAwaitCompletion({problemToken},1,normalWaitTime);
-            else %Wait for slot to open, and then the normal wait time.
-                isDone = sapiAwaitCompletion({problemToken},1,normalWaitTime+timeToWait);
+            while ~resultCaptured
+
+                [slotOpen,timeToWait] = isTimeSlot();
+                if ~slotOpen
+                    fprintf(logFile,'%s : Waiting for time slot to open. \n', datestr(now));
+                    pause(timeToWait);
+                    fprintf(logFile,'%s : Slot opened. Resume operations. \n',datestr(now));
+                end
+
+                problemToken = sapiAsyncSolveIsing(solver,h_physical,J_physical,param);
+                problemToken = sapiAwaitSubmission({problemToken}, normalWaitTime);
+                if isempty(problemToken{1})
+                    errObj = MException('sapi:ProblemSubmissionFailed',...
+                                        'Can not submit problem in %g seconds',...
+                                        normalWaitTime);
+                    throw(errObj);
+                end
+
+                problemID    = problemToken{1}.handle.problem_id;
+                [slotOpen,timeToWait] = isTimeSlot();
+                fprintf(logFile,'%s : %s : Submitted a job. Waiting for %g seconds\n',...
+                        datestr(now),problemID,timeToWait+normalWaitTime);
+
+                if slotOpen %Wait for normal wait time.
+                    isDone = sapiAwaitCompletion(problemToken,1,normalWaitTime);
+                else %Wait for slot to open, and then the normal wait time.
+                    isDone = sapiAwaitCompletion(problemToken,1,normalWaitTime+timeToWait);
+                end
+
+                if isDone
+                    resultCaptured = true;
+                else
+                    fprintf(logFile,'%s : %s : Job expired without results\n',...
+                            datestr(now),problemID);
+                end
             end
 
-            if isDone
-                resultCaptured = true;
+            resultLocal{iiProgCycle} = sapiAsyncResult(problemToken{1});
+            fprintf(logFile,'%s : %s : Result gathered for problem cycle %d\n',...
+                                datestr(now),problemID,iiProgCycle);
+            break;
+        catch errorObject
+            fprintf('!*');
+            fprintf(fileHandle, '%s : Error identifier \"%s\" \n',datestr(now), ...
+                    errorObject.identifier);
+            fprintf(fileHandle, '%s : Error message \" %s \" \n' ,datestr(now), ...
+                    errorObject.message);
+            pause(5);
+            if strcmp(errorObject.identifier,'sapi:NetworkError')
+                shouldRenewSolver = true;
             end
         end
-
-        result = sapiAsyncResult(problemToken);
-        break;
-    catch errorObject
-        fprintf('!*');
-        fprintf(fileHandle, '%s : Error identifier \"%s\" \n',datestr(now), ...
-                errorObject.identifier);
-        fprintf(fileHandle, '%s : Error message \" %s \" \n' ,datestr(now),errorObject.message);
-        pause(5);
-        if strcmp(errorObject.identifier,'sapi:NetworkError')
-            shouldRenewSolver = true;
-        end
-    end
-end
+    end %End of 1 programming cycle.
+end %End programming cycles.
 
 fclose(fileHandle);
+fclose(logFile);
+
+%Join all the different programming cycles.
+if progCycles == 1
+    result = resultLocal{1};
+else
+    resultLocal = cell2mat(resultLocal);
+    result.solutions = [resultLocal(:).solutions];
+    result.energies  = [resultLocal(:).energies];
+    result.timing    = [resultLocal(:).timing];
+end
 
 end

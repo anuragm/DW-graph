@@ -1,4 +1,4 @@
-function [h_physical,J_physical] = logical_to_physical_ham(h_logical, J_logical)
+function [h_physical,J_physical] = logical_to_physical_ham(h_logical, J_logical,varargin)
 %LOGICALTOPHYSICALHAM converts a logical Ising (h,J) to physical Chimera graph (h,J)
 %  Usage: [h_physical,J_physical] = logicalToPhysicalHam(h_logical, J_logical)
 %
