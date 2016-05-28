@@ -1,4 +1,4 @@
-%Initialises data for using the various chip access functions.
+%Initializes data for using the various chip access functions.
 
 %% Create the solver datafile
 if ~(exist('solverSettings.mat','file')==2)

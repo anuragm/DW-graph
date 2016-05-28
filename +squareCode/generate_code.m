@@ -16,6 +16,17 @@ function [code,holes,logicalNgbr] = generate_code(varargin)
 
 import dwGraph.physicalGraph.is_valid_coupling;
 
+%Saves the codes to code.mat, and holes to holes.mat in package directory.
+currentFilePath = mfilename('fullpath');
+parentDir = fileparts(currentFilePath);
+codeFile = fullfile(parentDir,'code.mat');
+holeFile = fullfile(parentDir,'holes.mat');
+
+if and(exist(codeFile,'file')==2,exist(holeFile,'file')==2)
+    fprintf('Code files already exist for square code.\n');
+    return;
+end
+
 holes = [];
 %Create solver if not supplied as argument.
 if isempty(varargin)
@@ -145,12 +156,6 @@ for ii=1:length(keySet)
 end
 
 logicalNgbr = containers.Map(keySet,valueSet);
-
-%Saves the codes to code.mat, and holes to holes.mat in package directory.
-currentFilePath = mfilename('fullpath');
-parentDir = fileparts(currentFilePath);
-codeFile = fullfile(parentDir,'code.mat');
-holeFile = fullfile(parentDir,'holes.mat');
 
 save(codeFile,'code','logicalNgbr');
 save(holeFile,'holes');

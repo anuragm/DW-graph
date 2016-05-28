@@ -4,11 +4,23 @@ function [holes,logicalNgbr] = generate_code(varargin)
 %        [holes,logicalNgbr] = generate_code()
 % Inputs is either blank, in case where the file solverSettings.mat is used to generate a
 % solver, or if a DW2 solver is provided, it is used to generate relavent parameters for
-% that solver. 
+% that solver.
 %
 % This function generates a neighbor dictionary variable which contains the neighbors of a
 % given physical qubit. It also generates a list of holes, which is saved to a file as well.
-    
+
+
+%And now save all these structures.
+currentFilePath = mfilename('fullpath');
+parentDir = fileparts(currentFilePath);
+codeFile = fullfile(parentDir,'code.mat');
+holeFile = fullfile(parentDir,'holes.mat');
+
+if and(exist(codeFile,'file')==2,exist(holeFile,'file')==2)
+    fprintf('Code files already exist for Chimera graph.\n');
+    return;
+end
+
 %Create solver if not supplied as argument.
 if isempty(varargin)
     if exist('solverSettings.mat','file')==2
@@ -18,7 +30,7 @@ if isempty(varargin)
                             'solverSettings.mat does not exists']);
         throw(errObj);
     end
-    
+
     while(true)
         try
             connHandle = sapiRemoteConnection(urlDwave,myToken);
@@ -27,15 +39,15 @@ if isempty(varargin)
         catch errorE
             disp(errorE)
             fprintf(['Fatal error in creating a solver. Are you sure you can connect' ...
-                     ' to DW2? \n']);     
+                     ' to DW2? \n']);
             fprintf('Retrying in 60 seconds...\n');
             pause(60);
         end
-    end    
+    end
 else
     solver = varargin{1};
 end
-    
+
 propertiesDW = sapiSolverProperties(solver);
 workingQubits = propertiesDW.qubits; %column vector
 workingCouplers = propertiesDW.couplers; %2xnumberOfCouplings matrix
@@ -47,10 +59,10 @@ holes = setdiff(0:1:(totalQubits-1), workingQubits');
 
 %Construct a code map.
 keySet = 0:1:(totalQubits-1);
-valueSet{length(keySet)}= []; 
+valueSet{length(keySet)}= [];
 
 J = zeros(totalQubits,totalQubits);
-%Construct an adjacency matrix from working couplers. 
+%Construct an adjacency matrix from working couplers.
 for ii=1:size(workingCouplers,2)
     qubitX = workingCouplers(1,ii);
     qubitY = workingCouplers(2,ii);
@@ -71,12 +83,6 @@ end
 
 %Create the map.
 logicalNgbr = containers.Map(keySet,valueSet);
-
-%And now save all these structures.
-currentFilePath = mfilename('fullpath');
-parentDir = fileparts(currentFilePath);
-codeFile = fullfile(parentDir,'code.mat');
-holeFile = fullfile(parentDir,'holes.mat');
 
 save(codeFile,'logicalNgbr');
 save(holeFile,'holes');

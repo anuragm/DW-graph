@@ -5,15 +5,26 @@ function [code,holes,logicalNgbr] = generate_code(varargin)
 %        [code,holes,logicalNgbr] = generate_code()
 % Inputs is either blank, in case where the file solverSettings.mat is used to generate a
 % solver, or if a DW2 solver is provided, it is used to generate relavent parameters for
-% that solver. 
+% that solver.
 %
 % This function generates a code dictionary, where keys are the integers from 0 to 127, the
 % 128 logical qubits. The values of each key is an array, which is the list of physical
 % qubits that correspond to that logical qubit.
 % Additionally, a second variable which contains the neighbors of a given logical qubit is
-% also generated. Both these quantities are saved to file code.mat. 
-  
+% also generated. Both these quantities are saved to file code.mat.
+
 import dwGraph.physicalGraph.is_valid_coupling;
+
+%And now save all these structures.
+currentFilePath = mfilename('fullpath');
+parentDir = fileparts(currentFilePath);
+codeFile = fullfile(parentDir,'code.mat');
+holeFile = fullfile(parentDir,'holes.mat');
+
+if and(exist(codeFile,'file')==2,exist(holeFile,'file')==2)
+    fprintf('Code files already exist for Pudenz code.\n');
+    return;
+end
 
 holes = [];
 %Create solver if not supplied as argument.
@@ -25,7 +36,7 @@ if isempty(varargin)
                             'solverSettings.mat does not exists']);
         throw(errObj);
     end
-    
+
     while(true)
         try
             connHandle = sapiRemoteConnection(urlDwave,myToken);
@@ -34,11 +45,11 @@ if isempty(varargin)
         catch errorE
             disp(errorE)
             fprintf(['Fatal error in creating a solver. Are you sure you can connect' ...
-                     ' to DW2? \n']);     
+                     ' to DW2? \n']);
             fprintf('Retrying in 60 seconds...\n');
             pause(60);
         end
-    end    
+    end
 else
     solver = varargin{1};
 end
@@ -55,7 +66,7 @@ physicalHoles   = setdiff(0:1:(totalQubits-1), workingQubits');
 %data qubits, the last qubit is the penalty qubit. If the last qubit is missing, we can still
 %work with three qubits, with a penalty term missing.
 
-totalLogicalQubit        = totalQubits/4; 
+totalLogicalQubit        = totalQubits/4;
 keySet                   = 0:1:(totalLogicalQubit-1);
 valueSet{length(keySet)} = [];
 cellSize                 = sqrt(totalLogicalQubit/2);
@@ -64,26 +75,26 @@ for ii=0:8:(totalQubits-8) %Assuming unit cells of size 8.
     leftLogical = 2*floor(ii/8); rightLogical = leftLogical+1;
     leftPhysical = [ii ii+1 ii+2];
     rightPhysical = [ii+4 ii+5 ii+6];
-    
-        
+
+
     %Add the penalty qubits if present.
     if ~ismember(ii+7,physicalHoles)
         %Check if there are links present between data qubits and penalty qubit.
         properCoupling = is_valid_coupling(leftPhysical(1),ii+7,workingCouplers) && ...
                          is_valid_coupling(leftPhysical(2),ii+7,workingCouplers) && ...
                          is_valid_coupling(leftPhysical(3),ii+7,workingCouplers);
-        
+
         if properCoupling
             leftPhysical = [leftPhysical ii+7]; %#ok
         end
     end
-    
+
     if ~ismember(ii+3,physicalHoles)
         %Check if there are links present between data qubits and penalty qubit.
         properCoupling = is_valid_coupling(rightPhysical(1),ii+3,workingCouplers) && ...
                          is_valid_coupling(rightPhysical(2),ii+3,workingCouplers) && ...
                          is_valid_coupling(rightPhysical(3),ii+3,workingCouplers);
-    
+
         if properCoupling
             rightPhysical = [rightPhysical ii+3];  %#ok
         end
@@ -98,7 +109,7 @@ for ii=0:8:(totalQubits-8) %Assuming unit cells of size 8.
         rightPhysical = [];
         holes = [holes rightLogical]; %#ok
     end
-    
+
     valueSet{leftLogical+1} = leftPhysical;
     valueSet{rightLogical+1} = rightPhysical;
 end
@@ -118,17 +129,17 @@ for ii=keySet
         valueSet{ii+1}=[];
         continue;
     end
-    
+
     %There are three neighbors, one on left/right or up/down, and other in the same unit cell.
     ngbrs = [];
     physicalQubits = code(ii);
     %Check if all the the links for up-down and in-unit cell exist.
-    if mod(ii,2)==0 %Logical qubit from left half of unit cell.  
+    if mod(ii,2)==0 %Logical qubit from left half of unit cell.
         candidates =  intersect([ii+1 ii+2*cellSize ii-2*cellSize],validLogicalQubits);
     else            %Logical qubit from right half of unit cell.
         candidates = intersect([ii-2 ii-1 ii+2],validLogicalQubits);
     end
-    
+
     for candidate = candidates
         if ismember(candidate,holes)
             continue;
@@ -140,16 +151,10 @@ for ii=keySet
             ngbrs = [ngbrs candidate]; %#ok
         end
     end
-    
+
     valueSet{ii+1} = ngbrs;
 end
-logicalNgbr = containers.Map(keySet,valueSet);        
-
-%And now save all these structures.
-currentFilePath = mfilename('fullpath');
-parentDir = fileparts(currentFilePath);
-codeFile = fullfile(parentDir,'code.mat');
-holeFile = fullfile(parentDir,'holes.mat');
+logicalNgbr = containers.Map(keySet,valueSet);
 
 save(codeFile,'code','logicalNgbr');
 save(holeFile,'holes');
