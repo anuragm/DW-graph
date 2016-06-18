@@ -6,8 +6,8 @@ function result = submit_ising(h_physical,J_physical,param)
 %INPUT:
 %   h_physical  : The physical local fields.
 %   J_physical  : The physical couplings.
-%       Coulings will be scaled down to [-1,1] range if necessary. No scale up would be done.
-%   param      : parameters to be send to DW2.
+%       Couplings will be scaled down to [-1,1] range if necessary. No scale up would be done.
+%   param      : parameters to be send to D-Wave
 %OUTPUT:
 %   result     : The raw result from D-Wave
 
@@ -15,15 +15,21 @@ function result = submit_ising(h_physical,J_physical,param)
 param.auto_scale  = false;
 param.answer_mode = 'raw';
 
-%Manually scale the couplings and local fields of physical hamiltonian.
+%Manually scale the couplings and local fields of physical Hamiltonian.
 J_max = max(abs(J_physical(:))); h_max = max(abs(h_physical(:)));
 scaleFactor = max([J_max h_max 1]);
 h_physical = h_physical/scaleFactor; J_physical = J_physical/scaleFactor;
 
-%Split the problem into multiple programming cycle, and join the results at end.
-if param.num_reads > 1000
-    progCycles = ceil(param.num_reads/1000);
-    param.num_reads = 1000;
+%Figure out maximum allowed reads. It is 1000 or less, depending on annealing time.
+max_reads = floor(0.95*1e6/param.annealing_time);
+if max_reads > 1000
+    max_reads = 1000;
+end
+
+%And set the anneals to that max value, and set the required programming cycles.
+if param.num_reads > max_reads
+    progCycles = ceil(param.num_reads/max_reads);
+    param.num_reads = max_reads;
 else
     progCycles = 1;
 end
