@@ -33,30 +33,30 @@ codeFile = fullfile(parentDir,'code.mat');
 holeFile = fullfile(parentDir,'holes.mat');
 load(holeFile,'holes');
 load(codeFile,'code','logicalNgbr');
-totalQubits = length(logicalNgbr); 
+totalQubits = length(logicalNgbr);
 numOfCells = sqrt(totalQubits/2);
 %keyboard;
 
-%The even nodes are arranged in every other line, and so are the odd nodes. 
+%The even nodes are arranged in every other line, and so are the odd nodes.
 for qubit = 0:(totalQubits-1)
 
     xpos = 2*mod(qubit,2*numOfCells);
     ypos = 2*(2*floor(qubit/(2*numOfCells)) + (mod(qubit,2)~=0));
-   
+
     qubitStyle = 'valid';
-    %invalid qubits. 
+    %invalid qubits.
     if ismember(qubit,holes)
         qubitStyle = 'invalid';
     end
-    
+
     %If the qubit has only three physical qubits, we paint it orange.
     if length(code(qubit))==3
         qubitStyle='noPenalty';
     end
-   
+
     fprintf(fid,'\\node [style=%s] (%g) at (%g, %g) {%g};\n',qubitStyle,qubit,xpos,ypos, ...
-                qubit);        
-    
+                qubit);
+
 end
 
 %Draw the connections from J matrix.
@@ -69,24 +69,11 @@ for ii=1:length(activeRows)
         lineType = 'dottedLine';
     end
     fprintf(fid,'\\draw [style=%s] (%d) to (%d);\n',lineType,activeRows(ii)-1, ...
-            activeColumns(ii)-1);    
+            activeColumns(ii)-1);
 end
 
 %Put in the closing statement.
 fprintf(fid,'\n\n\\end{pgfonlayer}\n\\end{tikzpicture}\n\\end{document}\n');
 fclose(fid);
-
-%% Now compile to pdf file.
-setenv('PATH', [getenv('PATH') ':/usr/local/bin:/usr/texbin/']);
-command    = sprintf('pdflatex %s.tex',fileName);
-[~,~]      = system(command);
-command    = sprintf('latexmk -c %s.tex',fileName);
-[~,~]      = system(command);
-command    = sprintf('pdfcrop %s.pdf',fileName);
-[status,~] = system(command);
-
-if ( status ~= 0)
-    fprintf('cannot compile latex!\n')
-end
 
 end

@@ -26,19 +26,19 @@ if ~(exist('_plots','dir')==7)
 end
 
 newPlots = false;
-if ~(exist('_plots/pudenzCode.pdf','file')==2)
+if ~(exist('_plots/pudenzCode.tex','file')==2)
     dwGraph.pudenzCode.drawPudenzCode; newPlots = true;
 else
     fprintf('Graph for Pudenz code already exists. \n');
 end
 
-if ~(exist('_plots/squareCode.pdf','file')==2)
+if ~(exist('_plots/squareCode.tex','file')==2)
     dwGraph.squareCode.drawSquareCode; newPlots = true;
 else
     fprintf('Graph for Square code already exists. \n');
 end
 
-if ~(exist('_plots/chimeraGraph.pdf','file')==2)
+if ~(exist('_plots/chimeraGraph.tex','file')==2)
     dwGraph.physicalGraph.drawChimeraGraph; newPlots = true;
 else
     fprintf('Physical Chimera graph already exists. \n');
@@ -46,8 +46,6 @@ end
 
 if newPlots
     movefile('*.tex','_plots/');
-    movefile('*-crop.pdf','_plots/');
-    movefile('*.pdf','_plots');
 end
 
 fprintf('Graphs of all codes exist in folder _plots/ \n');
