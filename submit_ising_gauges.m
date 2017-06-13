@@ -76,7 +76,7 @@ for iiProgCycle = 1:progCycles
 
             while ~resultCaptured
 
-                [slotOpen,timeToWait] = isTimeSlot();
+                [slotOpen,timeToWait] = dwGraph.isTimeSlot();
                 if ~slotOpen
                     fprintf(logFile,'%s : Waiting for time slot to open. \n', datestr(now));
                     pause(timeToWait);
@@ -99,7 +99,7 @@ for iiProgCycle = 1:progCycles
                 end
 
                 problemID    = problemToken{1}.handle.problem_id;
-                [slotOpen,timeToWait] = isTimeSlot();
+                [slotOpen,timeToWait] = dwGraph.isTimeSlot();
                 fprintf(logFile,'%s : %s : Submitted a job. Waiting for %g seconds\n',...
                         datestr(now),problemID,timeToWait+normalWaitTime);
 
