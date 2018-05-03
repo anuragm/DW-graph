@@ -26,8 +26,8 @@ h_physical = h_physical/scaleFactor; J_physical = J_physical/scaleFactor;
 
 %Figure out maximum allowed reads. It is 1000 or less, depending on annealing time.
 max_reads = floor(0.95*1e6/param.annealing_time);
-if max_reads > 10000
-    max_reads = 10000;
+if max_reads > 1000
+    max_reads = 1000;
 end
 
 %And set the anneals to that max value, and set the required programming cycles.
