@@ -145,4 +145,12 @@ else
     result = cell2mat(resultLocal);
 end
 
+%Sparse out arrays for smaller data size.
+for ii=1:length(result)
+    soln = result(ii).solutions;
+    soln(soln==3) = 0;
+    soln = sparse(soln);
+    result(ii).solutions = soln;
+end
+
 end
